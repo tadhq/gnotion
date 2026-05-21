@@ -9,6 +9,32 @@ import 'prismjs/plugins/toolbar/prism-toolbar.min.css';
 import React from 'react';
 
 const PRISM_JS_PATH = 'https://npm.elemecdn.com/prismjs@1.29.0/components/';
+const MERMAID_JS_URL = 'https://cdn.jsdelivr.net/npm/mermaid@9.3.0/dist/mermaid.min.js';
+
+let mermaidLoadPromise: Promise<void> | null = null;
+
+function loadMermaid(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  if ((window as Window & { mermaid?: { contentLoaded: () => void } }).mermaid) {
+    return Promise.resolve();
+  }
+
+  if (!mermaidLoadPromise) {
+    mermaidLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = MERMAID_JS_URL;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load mermaid'));
+      document.head.appendChild(script);
+    });
+  }
+
+  return mermaidLoadPromise;
+}
 
 /**
  * @url https://github.com/tangly1024/NotionNext/blob/main/components/PrismMac.js
@@ -56,8 +82,8 @@ const renderMermaid = async () => {
       }
     }
     if (needLoad) {
-      const asyncMermaid = await import('mermaid');
-      asyncMermaid.default.contentLoaded();
+      await loadMermaid();
+      (window as unknown as { mermaid?: { contentLoaded: () => void } }).mermaid?.contentLoaded();
     }
   }
 };

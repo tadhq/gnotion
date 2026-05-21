@@ -9,8 +9,7 @@ import { NotionRenderer } from 'react-notion-x';
 import GenericState from '../components/GenericState';
 import RevalidateButton from '../components/RevalidateButton';
 import { getPageIcon } from '../utils/getPageIcon';
-import notion from '../utils/notion';
-import { sanitizeRecordMap } from '../utils/sanitizeRecordMap';
+import { getNotionPage } from '../utils/getNotionPage';
 
 type TProps = {
   error: any;
@@ -115,7 +114,7 @@ export async function getStaticProps(context) {
 
   if (pageParam !== 'favicon.ico' && pageId) {
     try {
-      recordMap = sanitizeRecordMap(await notion.getPage(pageParam));
+      recordMap = await getNotionPage(pageParam);
     } catch (ex) {
       error = {
         message: ex.message,

@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ExtendedRecordMap } from 'notion-types';
-import { getPageTitle } from 'notion-utils';
+import { getPageTitle, parsePageId } from 'notion-utils';
 import { NotionRenderer } from 'react-notion-x';
 import GenericState from '../components/GenericState';
 import RevalidateButton from '../components/RevalidateButton';
@@ -15,9 +15,10 @@ import { sanitizeRecordMap } from '../utils/sanitizeRecordMap';
 type TProps = {
   error: any;
   recordMap: ExtendedRecordMap;
+  pageId: string | null;
 };
 
-export default function Page({ error, recordMap }: TProps) {
+export default function Page({ error, recordMap, pageId }: TProps) {
   const colorScheme = useColorScheme();
 
   if (error) return <GenericState message={error.message} />;
@@ -25,7 +26,11 @@ export default function Page({ error, recordMap }: TProps) {
   if (!recordMap) return <GenericState message="No data available" />;
 
   const title = getPageTitle(recordMap);
-  const icon = getPageIcon(recordMap, process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE);
+  const icon = getPageIcon(
+    recordMap,
+    process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE,
+    pageId ?? undefined
+  );
 
   const ogImageUrl = process.env.NEXT_PUBLIC_SITE_URL.concat(
     '/api/og-image?',
@@ -82,12 +87,14 @@ export default function Page({ error, recordMap }: TProps) {
       </style>
       <div id="container">
         <NotionRenderer
+          blockId={pageId ?? undefined}
           showTableOfContents
           components={{ nextImage: Image, nextLink: Link, Code, Collection }}
           darkMode={colorScheme === 'dark'}
           disableHeader={true}
           fullPage={true}
           recordMap={recordMap}
+          rootPageId={pageId ?? undefined}
         />
         <PrismMac />
       </div>
@@ -103,11 +110,12 @@ export async function getStaticProps(context) {
   let error = null;
   let recordMap = null;
 
-  /** @type String  */
-  let pageId = context.params.pageId;
-  if (pageId !== 'favicon.ico') {
+  const pageParam = context.params.pageId;
+  const pageId = parsePageId(pageParam);
+
+  if (pageParam !== 'favicon.ico' && pageId) {
     try {
-      recordMap = sanitizeRecordMap(await notion.getPage(pageId));
+      recordMap = sanitizeRecordMap(await notion.getPage(pageParam));
     } catch (ex) {
       error = {
         message: ex.message,
@@ -119,6 +127,7 @@ export async function getStaticProps(context) {
     props: {
       error,
       recordMap,
+      pageId,
     },
     revalidate: 60, // In seconds
   };

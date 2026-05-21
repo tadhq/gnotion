@@ -1,17 +1,13 @@
 import { ExtendedRecordMap } from 'notion-types';
 import { getBlockIcon, isUrl } from 'notion-utils';
+import { getPageBlockFromRecordMap } from './sanitizeRecordMap';
 
-function getPageBlock(recordMap: ExtendedRecordMap) {
-  const blocks = Object.values(recordMap.block);
-  return (
-    blocks.find((b) => b?.value?.type === 'page')?.value ??
-    blocks.find((b) => b?.value?.type === 'collection_view_page')?.value ??
-    recordMap.block[Object.keys(recordMap.block)[0]]?.value
-  );
-}
-
-export function getPageIcon(recordMap: ExtendedRecordMap, defaultIcon?: string) {
-  const pageBlock = getPageBlock(recordMap);
+export function getPageIcon(
+  recordMap: ExtendedRecordMap,
+  defaultIcon?: string,
+  pageId?: string
+) {
+  const pageBlock = getPageBlockFromRecordMap(recordMap, pageId);
   if (!pageBlock) {
     return defaultIcon;
   }
@@ -29,6 +25,9 @@ export function getPageIcon(recordMap: ExtendedRecordMap, defaultIcon?: string) 
     return encodeURIComponent(`https://www.notion.so${icon}?mode=light`);
   }
 
-  // Emoji and other non-URL icons cannot be used in OG images
+  if (icon.startsWith('attachment:') && recordMap.signed_urls?.[pageBlock.id]) {
+    return encodeURIComponent(recordMap.signed_urls[pageBlock.id]);
+  }
+
   return defaultIcon;
 }

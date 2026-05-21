@@ -10,6 +10,7 @@ import GenericState from '../components/GenericState';
 import RevalidateButton from '../components/RevalidateButton';
 import { getPageIcon } from '../utils/getPageIcon';
 import notion from '../utils/notion';
+import { sanitizeRecordMap } from '../utils/sanitizeRecordMap';
 
 type TProps = {
   error: any;
@@ -106,7 +107,7 @@ export async function getStaticProps(context) {
   let pageId = context.params.pageId;
   if (pageId !== 'favicon.ico') {
     try {
-      recordMap = await notion.getPage(pageId);
+      recordMap = sanitizeRecordMap(await notion.getPage(pageId));
     } catch (ex) {
       error = {
         message: ex.message,
